@@ -10,15 +10,17 @@ class grafana::config {
 
         file {  $::grafana::cfg_location:
           ensure  => present,
+          owner   => $::grafana::user,
           content => template('grafana/config.ini.erb'),
         }
       }
     }
-    'package','repo': {
+    'package': {
       $cfg = $::grafana::cfg
 
       file {  $::grafana::cfg_location:
         ensure  => present,
+        owner   => $::grafana::user,
         content => template('grafana/config.ini.erb'),
       }
     }
@@ -32,14 +34,6 @@ class grafana::config {
     }
     default: {
       fail("Installation method ${::grafana::install_method} not supported")
-    }
-  }
-
-  if $::grafana::ldap_cfg {
-    $ldap_cfg = $::grafana::ldap_cfg
-    file { '/etc/grafana/ldap.toml':
-      ensure  => present,
-      content => inline_template("<%= require 'toml'; TOML::Generator.new(@ldap_cfg).body %>\n"),
     }
   }
 }

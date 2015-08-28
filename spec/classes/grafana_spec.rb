@@ -38,7 +38,7 @@ describe 'grafana' do
       let(:facts) {{
         :osfamily => 'Debian'
       }}
-
+      
       download_location = '/tmp/grafana.deb'
 
       describe 'use wget to fetch the package to a temporary location' do
@@ -47,7 +47,7 @@ describe 'grafana' do
       end
 
       describe 'install dependencies first' do
-        it { should contain_package('libfontconfig1').with_ensure('present').that_comes_before('Package[grafana]') }
+        it { should contain_package('libfontconfig').with_ensure('present').that_comes_before('Package[grafana]') }
       end
 
       describe 'install the package' do
@@ -61,85 +61,8 @@ describe 'grafana' do
         :osfamily => 'RedHat'
       }}
 
-      describe 'install dependencies first' do
-        it { should contain_package('fontconfig').with_ensure('present').that_comes_before('Package[grafana]') }
-      end
-
       describe 'install the package' do
         it { should contain_package('grafana').with_provider('rpm') }
-      end
-    end
-  end
-
-  context 'repo install method' do
-    let(:params) {{
-      :install_method => 'repo',
-      :manage_package_repo => true,
-      :version => 'present'
-    }}
-
-    context 'debian' do
-      let(:facts) {{
-        :osfamily => 'Debian',
-        :lsbdistid => 'Ubuntu'
-      }}
-
-      describe 'install apt repo dependencies first' do
-        it { should contain_class('apt') }
-        it { should contain_apt__source('grafana').with(:release => 'wheezy', :repos => 'main', :location => 'https://packagecloud.io/grafana/stable/debian') }
-        it { should contain_apt__source('grafana').that_comes_before('Package[grafana]') }
-      end
-
-      describe 'install dependencies first' do
-        it { should contain_package('libfontconfig1').with_ensure('present').that_comes_before('Package[grafana]') }
-      end
-
-      describe 'install the package' do
-        it { should contain_package('grafana').with_ensure('present') }
-      end
-    end
-
-    context 'redhat' do
-      let(:facts) {{
-        :osfamily => 'RedHat'
-      }}
-
-      describe 'yum repo dependencies first' do
-        it { should contain_yumrepo('grafana').with(:baseurl => 'https://packagecloud.io/grafana/stable/el/6/$basearch', :gpgkey => 'https://packagecloud.io/gpg.key https://grafanarel.s3.amazonaws.com/RPM-GPG-KEY-grafana', :enabled => 1) }
-        it { should contain_yumrepo('grafana').that_comes_before('Package[grafana]') }
-      end
-
-      describe 'install dependencies first' do
-        it { should contain_package('fontconfig').with_ensure('present').that_comes_before('Package[grafana]') }
-      end
-
-      describe 'install the package' do
-        it { should contain_package('grafana').with_ensure('present') }
-      end
-    end
-  end
-
-  context 'repo install method without managing the package repo' do
-    let(:params) {{
-      :install_method => 'repo',
-      :manage_package_repo => false,
-      :version => 'present'
-    }}
-
-    context 'debian' do
-      let(:facts) {{
-        :osfamily => 'Debian',
-        :lsbdistid => 'Ubuntu'
-      }}
-
-      it { should compile.with_all_deps }
-
-      describe 'install dependencies first' do
-        it { should contain_package('libfontconfig1').with_ensure('present').that_comes_before('Package[grafana]') }
-      end
-
-      describe 'install the package' do
-        it { should contain_package('grafana').with_ensure('present') }
       end
     end
   end
@@ -177,31 +100,6 @@ describe 'grafana' do
     describe 'run grafana as service' do
       it { should contain_service('grafana-server').with_ensure('running').with_provider('base') }
       it { should contain_service('grafana-server').with_hasrestart(false).with_hasstatus(false) }
-    end
-
-    context 'when user already defined' do
-      let(:pre_condition) {
-        'user{"grafana":
-          ensure => present,
-        }'
-      }
-      describe 'do NOT create grafana user' do
-        it { should_not contain_user('grafana').with_ensure('present').with_home(install_dir) }
-      end
-    end
-
-    context 'when service already defined' do
-      let(:pre_condition) {
-        'service{"grafana-server":
-          ensure     => running,
-          hasrestart => true,
-          hasstatus  => true,
-        }'
-      }
-      # let(:params) {{ :service_name => 'grafana-server'}}
-      describe 'do NOT run service' do
-        it { should_not contain_service('grafana-server').with_hasrestart(false).with_hasstatus(false) }
-      end
     end
   end
 
@@ -249,27 +147,6 @@ describe 'grafana' do
             'empty' => '',
           },
         },
-        :ldap_cfg => {
-          'servers' => [
-            { 'host' => 'server1',
-              'use_ssl' => true,
-              'search_filter' => '(sAMAccountName=%s)',
-              'search_base_dns' => [ 'dc=domain1,dc=com' ],
-            },
-            { 'host' => 'server2',
-              'use_ssl' => true,
-              'search_filter' => '(sAMAccountName=%s)',
-              'search_base_dns' => [ 'dc=domain2,dc=com' ],
-            },
-          ],
-          'servers.attributes' => {
-            'name' => 'givenName',
-            'surname' => 'sn',
-            'username' => 'sAMAccountName',
-            'member_of' => 'memberOf',
-            'email' => 'email',
-          }
-        },
       }}
 
       expected = "# This file is managed by Puppet, any changes will be overwritten\n\n"\
@@ -281,28 +158,6 @@ describe 'grafana' do
                  "empty = \n"
 
       it { should contain_file('/etc/grafana/grafana.ini').with_content(expected) }
-
-      ldap_expected = "\n[[servers]]\n"\
-                       "host = \"server1\"\n"\
-                       "search_base_dns = [\"dc=domain1,dc=com\"]\n"\
-                       "search_filter = \"(sAMAccountName=%s)\"\n"\
-                       "use_ssl = true\n"\
-                       "\n"\
-                      "[[servers]]\n"\
-                       "host = \"server2\"\n"\
-                       "search_base_dns = [\"dc=domain2,dc=com\"]\n"\
-                       "search_filter = \"(sAMAccountName=%s)\"\n"\
-                       "use_ssl = true\n"\
-                       "\n"\
-                       "[servers.attributes]\n"\
-                       "email = \"email\"\n"\
-                       "member_of = \"memberOf\"\n"\
-                       "name = \"givenName\"\n"\
-                       "surname = \"sn\"\n"\
-                       "username = \"sAMAccountName\"\n"\
-                       "\n"
-
-      it { should contain_file('/etc/grafana/ldap.toml').with_content(ldap_expected) }
     end
   end
 end

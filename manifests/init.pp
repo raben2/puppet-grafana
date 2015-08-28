@@ -34,11 +34,7 @@
 # Set to 'archive' to install Grafana using the tar archive.
 # Set to 'docker' to install Grafana using the official Docker container.
 # Set to 'package' to install Grafana using .deb or .rpm packages.
-# Set to 'repo' to install Grafana using an apt or yum repository.
 # Defaults to 'package'.
-#
-# [*manage_package_repo*]
-# If true this will setup the official grafana repositories on your host. Defaults to true.
 #
 # [*package_name*]
 # The name of the package managed with the 'package' install method.
@@ -63,27 +59,39 @@
 #  }
 #
 class grafana (
-  $archive_source      = $::grafana::params::archive_source,
-  $cfg_location        = $::grafana::params::cfg_location,
-  $cfg                 = $::grafana::params::cfg,
-  $ldap_cfg            = $::grafana::params::ldap_cfg,
-  $container_cfg       = $::grafana::params::container_cfg,
-  $container_params    = $::grafana::params::container_params,
-  $data_dir            = $::grafana::params::data_dir,
-  $install_dir         = $::grafana::params::install_dir,
-  $install_method      = $::grafana::params::install_method,
-  $manage_package_repo = $::grafana::params::manage_package_repo,
-  $package_name        = $::grafana::params::package_name,
-  $package_source      = $::grafana::params::package_source,
-  $service_name        = $::grafana::params::service_name,
-  $version             = $::grafana::params::version
+  $archive_source   = "https://grafanarel.s3.amazonaws.com/builds/grafana-${version}.linux-x64.tar.gz",
+  $cfg_location     = $::grafana::params::cfg_location,
+  $cfg              = $::grafana::params::cfg,
+  $ldap             = $::grafana::params::ldap,
+  $container_cfg    = $::grafana::params::container_cfg,
+  $config_folder    = $::grafana::params::config_folder,
+  $container_params = $::grafana::params::container_params,
+  $data_dir         = $::grafana::params::data_dir,
+  $install_dir      = $::grafana::params::install_dir,
+  $install_method   = $::grafana::params::install_method,
+  $package_name     = $::grafana::params::package_name,
+  $service_name     = $::grafana::params::service_name,
+  $version          = $::grafana::params::version,
+  $user             = $::grafana::params::grafana_user,
+  $adming           = $::grafana::params::adming,
+  $writeg            = $::grafana::params::writeg,
+  $viewg            = $::grafana::params::viewg,
+  $attributes       = $::grafana::params::attributes,
+  $package_source   = $::osfamily ? {
+    'Debian'          => "https://grafanarel.s3.amazonaws.com/builds/grafana_${version}_amd64.deb",
+    /(RedHat|Amazon)/ => "https://grafanarel.s3.amazonaws.com/builds/grafana-${version}-1.x86_64.rpm",
+    default           => $::grafana::archive_source
+  },
+
 ) inherits grafana::params {
 
   # validate parameters here
   if !is_hash($cfg) {
     fail('cfg parameter must be a hash')
   }
-
+  if ($ldap != undef) {
+    contain 'grafana::ldap'
+  } 
   class { 'grafana::install': } ->
   class { 'grafana::config': } ~>
   class { 'grafana::service': }

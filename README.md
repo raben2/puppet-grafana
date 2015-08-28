@@ -45,7 +45,6 @@ This assumes that you with to install Grafana using the 'package' method. To est
       install_method  => 'docker',
     }
 ```
-
 ##Usage
 
 ###Classes and Defined Types
@@ -121,57 +120,6 @@ Some minor notes:
  - Keys that contains dots (like auth.google) need to be quoted.
  - The order of the keys in this hash is the same as they will be written to the configuration file. So settings that do not fall under a section will have to come before any sections in the hash.
 
-####`ldap_cfg`
-
-#####TOML note
-This option **requires** the [toml](https://github.com/toml-lang/toml) gem. Either install the gem using puppet's native gem provider, [puppetserver_gem](https://forge.puppetlabs.com/puppetlabs/puppetserver_gem), [pe_gem](https://forge.puppetlabs.com/puppetlabs/pe_gem), [pe_puppetserver_gem](https://forge.puppetlabs.com/puppetlabs/pe_puppetserver_gem), or manually using one of the following:
-```
-  # apply or puppet-master
-  gem install toml
-  # PE apply
-  /opt/puppet/bin/gem install toml
-  # AIO or PE puppetserver
-  /opt/puppet/bin/puppetserver gem install toml
-```
-
-#####cfg note
-This option by itself is not sufficient to enable LDAP configuration as it must be enabled in the main configuration file. Enable it in cfg with:
-
-```
-'auth.ldap' => {
-  enabled     => 'true',
-  config_file => '/etc/grafana/ldap.toml',
-},
-```
-
-Manages the Grafana LDAP configuration file. This hash is directly translated into the corresponding TOML file, allowing for full flexibility in generating the configuration.
-
-See the [LDAP documentation](http://docs.grafana.org/v2.1/installation/ldap/) for more information.
-
-Example:
-
-```
-ldap_cfg => {
-  servers => [
-    { host            => 'ldapserver1.domain1.com',
-      use_ssl         => true,
-      search_filter   => '(sAMAccountName=%s)',
-      search_base_dns => [ 'dc=domain1,dc=com' ],
-      bind_dn         => 'user@domain1.com',
-      bind_password   => 'passwordhere',
-    },
-  ],
-  'servers.attributes' => {
-    name      => 'givenName',
-    surname   => 'sn',
-    username  => 'sAMAccountName',
-    member_of => 'memberOf',
-    email     => 'email',
-  }
-},
-```
-
-
 #####`container_cfg`
 
 Boolean to control whether a configuration file should be generated when using the 'docker' install method. If 'true', use the 'cfg' and 'cfg_location' parameters to control creation of the file. Defaults to false.
@@ -197,11 +145,7 @@ The installation directory to be used with the 'archive' install method. Default
 
 #####`install_method`
 
-Controls which method to use for installing Grafana. Valid options are: 'archive', 'docker', 'repo' and 'package'. The default is 'package'. If you wish to use the 'docker' installation method, you will need to include the 'docker' class in your node's manifest / profile. If you wish to use the 'repo' installation method, you can control whether the official Grafana repositories will be used. See `manage_package_repo` below for details.
-
-#####`manage_package_repo`
-
-Boolean. When using the 'repo' installation method, controls whether the official Grafana repositories are enabled on your host. If true, the official Grafana repositories will be enabled. If false, the module assumes you are managing your own package repository and will not set one up for you. Defaults to true.
+Controls which method to use for installing Grafana. Valid options are: 'archive', 'docker' and 'package'. The default is 'package'. If you wish to use the 'docker' installation method, you will need to include the 'docker' class in your node's manifest / profile.
 
 #####`package_name`
 
@@ -218,34 +162,6 @@ The name of the service managed with the 'archive' and 'package' install methods
 #####`version`
 
 The version of Grafana to install and manage. Defaults to the latest version of Grafana available at the time of module release.
-
-##Advanced usage:
-
-The archive install method will create the user and a "command line" service by default.
-There are no extra parameters to manage user/service for archive. However, both check to see if they are defined before defining. This way you can creat your own user and service with your own specifications. (sort of overriding)
-The service can be a bit tricky, in this example below, the class sensu_install::grafana::service creates a startup script and a service{'grafana-server':}
-
-Example:
-```puppet
-    user { 'grafana':
-      ensure   => present,
-      uid      => '1234',
-    }
-    ->
-    class { 'grafana':
-      install_method  => 'archive',
-    }
-
-    include sensu_install::grafana::service
-
-    # run your service after install/config but before grafana::service
-    Class[::grafana::install]
-    ->
-    Class[sensu_install::grafana::service]
-    ->
-    Class[::grafana::service]
-
-```
 
 ##Limitations
 

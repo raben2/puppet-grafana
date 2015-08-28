@@ -1,0 +1,54 @@
+# This file is managed by Puppet, any changes will be overwritten
+verbose_logging = true
+
+<%- @ldap.each_pair do |key, value|
+  if value.is_a?(Hash) -%>
+
+[[<%= key %>]]
+    <%- value.each_pair do |key, value| -%>
+<%= key %> = <%= value %>
+   <%- end -%>
+
+<%- end
+end -%>
+
+<%- @attributes.each_pair do |key, value|
+  if value.is_a?(Hash) -%>
+
+[<%= key %>]
+    <%- value.each_pair do |key, value| -%>
+<%= key %> = <%= value %>
+   <%- end -%>
+
+<%- end
+end -%>
+<%- @adming.each_pair do |key, value|
+  if value.is_a?(Hash) -%>
+
+[[<%= key %>]]
+    <%- value.each_pair do |key, value| -%>
+<%= key %> = <%= value %>
+   <%- end -%>
+
+<%- end
+end -%>
+<%- @writeg.each_pair do |key, value|
+  if value.is_a?(Hash) -%>
+
+[[<%= key %>]]
+    <%- value.each_pair do |key, value| -%>
+<%= key %> = <%= value %>
+   <%- end -%>
+
+<%- end
+end -%>
+<%- @viewg.each_pair do |key, value|
+  if value.is_a?(Hash) -%>
+
+[[<%= key %>]]
+    <%- value.each_pair do |key, value| -%>
+<%= key %> = <%= value %>
+   <%- end -%>
+
+<%- end
+end -%>
